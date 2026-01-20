@@ -1,59 +1,499 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Image Vault API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+REST API для загрузки, хранения и управления изображениями с авторизацией, дедупликацией и асинхронным сжатием.
 
-## About Laravel
+Проект реализован как тестовое задание и демонстрирует подходы, применимые в production-системах с высокой нагрузкой.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 📋 Содержание
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- [Возможности](#-возможности)
+- [Технологии](#-технологии)
+- [Требования](#-требования)
+- [Установка](#-установка)
+- [Конфигурация](#-конфигурация)
+- [Использование](#-использование)
+- [API Документация](#-api-документация)
+- [Архитектура](#-архитектура)
+- [Особенности реализации](#-особенности-реализации)
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## 🚀 Возможности
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Основные требования ✅
 
-## Laravel Sponsors
+- ✅ **Авторизация пользователей** (Laravel Sanctum)
+- ✅ **Загрузка изображений** (только JPEG и PNG, до 5 МБ)
+- ✅ **Просмотр списка изображений** (только своих)
+- ✅ **Получение конкретного изображения**
+- ✅ **Удаление изображения**
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### Дополнительные возможности ⭐
 
-### Premium Partners
+- ⭐ **Дедупликация изображений** по хэшу содержимого (SHA256)
+- ⭐ **Асинхронная конвертация в WebP** для экономии дискового пространства
+- ⭐ **Архитектура, готовая к высокой нагрузке** (100k+ загрузок в день)
+- ⭐ **Оптимизация хранения** без значимой потери качества
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+---
 
-## Contributing
+## 🛠 Технологии
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+- **PHP** 8.2+
+- **Laravel** 12
+- **Laravel Sanctum** — аутентификация через API токены
+- **Laravel Queue** — асинхронная обработка задач
+- **Intervention Image** — обработка и конвертация изображений
+- **SQLite/MySQL/PostgreSQL** — база данных
 
-## Code of Conduct
+---
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## 📦 Требования
 
-## Security Vulnerabilities
+- PHP >= 8.2
+- Composer
+- Node.js и npm (для фронтенда, опционально)
+- Расширение PHP: `imagick` или `gd` (для обработки изображений)
+- База данных: SQLite, MySQL или PostgreSQL
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
-## License
+## 🔧 Установка
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### 1. Клонирование репозитория
+
+```bash
+git clone <repository-url>
+cd image-vault
+```
+
+### 2. Установка зависимостей
+
+```bash
+composer install
+npm install
+```
+
+### 3. Настройка окружения
+
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+
+Отредактируйте `.env` файл и настройте:
+- `APP_URL` — URL вашего приложения
+- `DB_CONNECTION` — тип базы данных (sqlite, mysql, pgsql)
+- `DB_DATABASE` — имя базы данных
+- `QUEUE_CONNECTION` — драйвер очереди (database, redis, sync)
+
+### 4. Запуск миграций
+
+```bash
+php artisan migrate
+```
+
+### 5. Создание символической ссылки для хранилища
+
+```bash
+php artisan storage:link
+```
+
+### 6. Запуск очереди (для асинхронной обработки)
+
+```bash
+php artisan queue:work
+```
+
+**Важно:** Очередь должна работать постоянно для конвертации изображений в WebP.
+
+---
+
+## ⚙️ Конфигурация
+
+### Настройка очереди
+
+В файле `.env` установите:
+
+```env
+QUEUE_CONNECTION=database
+```
+
+Для production рекомендуется использовать Redis:
+
+```env
+QUEUE_CONNECTION=redis
+```
+
+### Настройка хранилища
+
+По умолчанию используется локальное хранилище (`storage/app/public`). Для production рекомендуется настроить S3:
+
+```env
+FILESYSTEM_DISK=s3
+AWS_ACCESS_KEY_ID=your-key
+AWS_SECRET_ACCESS_KEY=your-secret
+AWS_DEFAULT_REGION=us-east-1
+AWS_BUCKET=your-bucket
+```
+
+---
+
+## 📖 Использование
+
+### Запуск сервера разработки
+
+```bash
+php artisan serve
+```
+
+Приложение будет доступно по адресу `http://localhost:8000`
+
+### Запуск очереди
+
+В отдельном терминале:
+
+```bash
+php artisan queue:work
+```
+
+### Использование composer скриптов
+
+```bash
+# Полная установка проекта
+composer setup
+
+# Запуск dev окружения (сервер + очередь + логи)
+composer dev
+
+# Запуск тестов
+composer test
+```
+
+---
+
+## 📚 API Документация
+
+### Базовый URL
+
+```
+http://localhost:8000/api
+```
+
+### Авторизация
+
+Все защищенные маршруты требуют заголовок:
+
+```
+Authorization: Bearer {token}
+```
+
+---
+
+### 🔐 Авторизация
+
+#### Регистрация
+
+```http
+POST /api/auth/register
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "password123",
+  "password_confirmation": "password123"
+}
+```
+
+**Ответ:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "name": "John Doe",
+    "email": "john@example.com"
+  }
+}
+```
+
+#### Вход
+
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "john@example.com",
+  "password": "password123"
+}
+```
+
+**Ответ:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": 1,
+      "name": "John Doe",
+      "email": "john@example.com"
+    },
+    "token": "1|xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  },
+  "message": "Login successful"
+}
+```
+
+#### Получение текущего пользователя
+
+```http
+GET /api/auth/me
+Authorization: Bearer {token}
+```
+
+#### Выход
+
+```http
+POST /api/auth/logout
+Authorization: Bearer {token}
+```
+
+---
+
+### 🖼 Изображения
+
+#### Загрузка изображения
+
+```http
+POST /api/images
+Authorization: Bearer {token}
+Content-Type: multipart/form-data
+
+image: [файл изображения]
+```
+
+**Ограничения:**
+- Формат: JPEG или PNG
+- Максимальный размер: 5 МБ
+
+**Ответ:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "original_name": "photo.jpg",
+    "mime": "image/jpeg",
+    "size": 245678,
+    "url": "http://localhost:8000/storage/images/1/image_1234567890_abc12345.jpg"
+  }
+}
+```
+
+**Примечание:** Изображение возвращается в исходном формате. Конвертация в WebP выполняется асинхронно через очередь. При последующих запросах будет возвращена сжатая версия.
+
+#### Список изображений
+
+```http
+GET /api/images?per_page=20
+Authorization: Bearer {token}
+```
+
+**Параметры:**
+- `per_page` (опционально) — количество элементов на странице (максимум 100, по умолчанию 20)
+
+**Ответ:**
+
+```json
+{
+  "success": true,
+  "page": 1,
+  "of": 5,
+  "data": [
+    {
+      "id": 1,
+      "original_name": "photo.jpg",
+      "mime": "image/webp",
+      "size": 156789,
+      "url": "http://localhost:8000/storage/images/1/image_1234567890_abc12345.webp"
+    }
+  ],
+  "per_page": 20,
+  "total": 100,
+  "next_page_url": "http://localhost:8000/api/images?page=2",
+  "prev_page_url": null
+}
+```
+
+#### Получение изображения
+
+```http
+GET /api/images/{id}
+Authorization: Bearer {token}
+```
+
+**Ответ:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "original_name": "photo.jpg",
+    "mime": "image/webp",
+    "size": 156789,
+    "url": "http://localhost:8000/storage/images/1/image_1234567890_abc12345.webp"
+  }
+}
+```
+
+#### Удаление изображения
+
+```http
+DELETE /api/images/{id}
+Authorization: Bearer {token}
+```
+
+**Ответ:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "message": "Image deleted"
+  }
+}
+```
+
+---
+
+## 🏗 Архитектура
+
+Проект следует принципам **Clean Architecture** и **SOLID**:
+
+```
+app/
+├── Http/
+│   ├── Controllers/Api/     # Контроллеры API
+│   ├── Requests/            # Валидация запросов
+│   ├── Resources/           # Форматирование ответов
+│   └── Traits/              # Переиспользуемые трейты
+├── Services/                # Бизнес-логика
+├── Repositories/            # Работа с данными
+├── Models/                  # Eloquent модели
+└── Jobs/                    # Асинхронные задачи
+```
+
+### Слои архитектуры
+
+1. **Controllers** — обработка HTTP запросов, валидация, форматирование ответов
+2. **Services** — бизнес-логика приложения
+3. **Repositories** — абстракция работы с данными
+4. **Models** — Eloquent модели с отношениями
+
+---
+
+## 🎯 Особенности реализации
+
+### Дедупликация изображений
+
+Система предотвращает дублирование изображений через вычисление SHA256 хэша содержимого файла. При загрузке дубликата возвращается существующая запись без создания нового файла.
+
+**Реализация:**
+- Хэш вычисляется при загрузке: `hash_file('sha256', $file->getRealPath())`
+- Уникальный индекс в БД: `unique(['user_id', 'hash'])`
+- Проверка выполняется перед сохранением файла
+
+### Асинхронная конвертация в WebP
+
+Для оптимизации дискового пространства изображения конвертируются в WebP формат с качеством 85% в фоновом режиме.
+
+**Процесс:**
+1. Пользователь загружает изображение (JPEG/PNG)
+2. Файл сохраняется в исходном формате
+3. В очередь добавляется задача `ConvertImageToWebpJob`
+4. После конвертации оригинальный файл удаляется
+5. В БД обновляется путь и MIME-тип
+
+**Преимущества:**
+- Быстрый ответ пользователю (не ждет конвертации)
+- Экономия дискового пространства (WebP обычно на 25-35% меньше)
+- Готовность к высокой нагрузке (100k+ загрузок в день)
+
+### Безопасность
+
+- **Авторизация:** Все маршруты изображений защищены через `auth:sanctum`
+- **Изоляция данных:** Пользователь видит только свои изображения (проверка `user_id` в каждом запросе)
+- **Валидация:** Строгая валидация типов файлов и размеров
+- **Санитизация ошибок:** Внутренние детали ошибок скрыты от клиента
+
+### Производительность
+
+- **Индексы БД:** Оптимизированные индексы на `user_id` и `hash`
+- **Пагинация:** Поддержка пагинации для больших списков
+- **Асинхронная обработка:** Тяжелые операции вынесены в очередь
+- **Cascade Delete:** Автоматическое удаление изображений при удалении пользователя
+
+---
+
+## 📊 База данных
+
+### Таблица `images`
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `id` | bigint | Первичный ключ |
+| `user_id` | bigint | ID пользователя (FK) |
+| `path` | string | Путь к файлу |
+| `original_name` | string | Оригинальное имя файла |
+| `mime` | string | MIME-тип |
+| `size` | bigint | Размер файла в байтах |
+| `hash` | string | SHA256 хэш содержимого |
+| `created_at` | timestamp | Дата создания |
+| `updated_at` | timestamp | Дата обновления |
+
+**Индексы:**
+- `PRIMARY KEY (id)`
+- `INDEX (user_id)`
+- `UNIQUE (user_id, hash)`
+- `FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE`
+
+---
+
+## 🧪 Тестирование
+
+```bash
+php artisan test
+```
+
+---
+
+## 📝 Лицензия
+
+MIT License
+
+---
+
+## 👤 Автор
+
+Проект выполнен как тестовое задание.
+
+---
+
+## 🔄 Changelog
+
+### v1.0.0
+- Реализована авторизация через Laravel Sanctum
+- Добавлена загрузка изображений (JPEG, PNG, до 5 МБ)
+- Реализован просмотр списка изображений с пагинацией
+- Добавлено получение и удаление изображений
+- Реализована дедупликация по хэшу содержимого
+- Добавлена асинхронная конвертация в WebP
+- Настроена архитектура для высокой нагрузки
