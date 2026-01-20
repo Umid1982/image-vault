@@ -14,6 +14,7 @@ class Image extends Model
         'original_name',
         'mime',
         'size',
+        'hash',
     ];
 
     /**

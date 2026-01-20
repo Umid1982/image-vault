@@ -33,6 +33,14 @@ class ImageService
      */
     public function upload(array $data): ?Image
     {
+        $hash = hash_file('sha256', $data['file']->getRealPath());
+
+        $existing = $this->imageRepository->findByHashForUser($hash, $data['user_id']);
+
+        if ($existing) {
+            return $existing;
+        }
+
         $path = $data['file']->storeAs(
             "images/{$data['user_id']}",
             'image_' . time() . '_' . Str::random(8) . '.' . $data['file']->extension(),
@@ -45,6 +53,7 @@ class ImageService
             'original_name' => $data['original_name'],
             'mime' => $data['mime'],
             'size' => $data['size'],
+            'hash' => $hash,
         ]);
     }
 

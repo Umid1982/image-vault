@@ -41,5 +41,19 @@ class ImageRepository
     {
         return Image::query()->create($data);
     }
+
+    /**
+     * @param string $hash
+     * @param int $userId
+     * @return Image|null
+     */
+    public function findByHashForUser(string $hash,int $userId): ?Image
+    {
+        return Image::query()
+            ->where('hash', $hash)
+            ->where('user_id', $userId)
+            ->first();
+    }
+
 }
 
