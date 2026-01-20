@@ -3,6 +3,7 @@
 namespace App\Services;
 
 
+use App\Jobs\ConvertImageToWebpJob;
 use App\Models\Image;
 use App\Repositories\ImageRepository;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -47,7 +48,7 @@ class ImageService
             'public'
         );
 
-        return $this->imageRepository->create([
+        $image = $this->imageRepository->create([
             'user_id' => $data['user_id'],
             'path' => $path,
             'original_name' => $data['original_name'],
@@ -55,6 +56,10 @@ class ImageService
             'size' => $data['size'],
             'hash' => $hash,
         ]);
+
+        ConvertImageToWebpJob::dispatch($image);
+
+        return $image;
     }
 
     /**

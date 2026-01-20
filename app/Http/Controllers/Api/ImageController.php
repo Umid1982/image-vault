@@ -39,6 +39,9 @@ class ImageController extends Controller
         return $image
             ? $this->successResponse(ImageResource::make($image))
             : $this->errorResponse('Upload failed', 422);
+        // Примечание: изображение возвращается в исходном формате.
+        // Конвертация в WebP выполняется асинхронно через ConvertImageToWebpJob.
+        // При последующих запросах через GET /api/images/{id} будет возвращена сжатая версия.
     }
 
     /**
