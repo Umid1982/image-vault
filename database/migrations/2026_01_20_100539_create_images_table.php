@@ -17,8 +17,9 @@ return new class extends Migration {
             $table->string('original_name')->comment('Оригинальное имя файла');
             $table->string('mime', 50)->comment('MIME-тип (image/jpeg, image/png)');
             $table->unsignedBigInteger('size')->comment('Размер файла в байтах');
-            $table->string('hash')->nullable()->unique()->comment('Хэш содержимого файла для предотвращения дубликатов');
+            $table->string('hash')->comment('Хэш содержимого файла для предотвращения дубликатов');
             $table->timestamps();
+            $table->unique(['user_id', 'hash']);
             $table->index('user_id');
         });
     }
