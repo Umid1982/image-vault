@@ -18,7 +18,6 @@ class RetryFailedWebpConversions extends Command
     protected $signature = 'images:retry-failed
                             {--hours=24 : Retry conversions failed in last N hours}
                             {--limit=50 : Maximum number of images to retry}
-                            {--status=failed : Status to retry (failed, permanently_failed, skipped)}
                             {--force : Force retry even if max attempts reached}
                             {--dry-run : Show what would be retried without actually doing it}';
 
@@ -41,7 +40,6 @@ class RetryFailedWebpConversions extends Command
         $this->info('Parameters:');
         $this->line("  • Hours: {$this->option('hours')}");
         $this->line("  • Limit: {$this->option('limit')}");
-        $this->line("  • Status: {$this->option('status')}");
         $this->line("  • Force: " . ($this->option('force') ? 'Yes' : 'No'));
         $this->line("  • Dry run: " . ($this->option('dry-run') ? 'Yes' : 'No'));
         $this->newLine();
@@ -69,7 +67,8 @@ class RetryFailedWebpConversions extends Command
             $this->info(" Successfully retried {$retriedCount} image(s).");
             Log::info('RetryFailedWebpConversions command executed', [
                 'retried_count' => $retriedCount,
-                'parameters' => $this->getParametersArray(),
+                'hours' => $this->option('hours'),
+                'limit' => $this->option('limit'),
             ]);
         } else {
             $this->warn('⚠️ No images were retried.');
@@ -83,38 +82,21 @@ class RetryFailedWebpConversions extends Command
      */
     private function buildQuery()
     {
-        $status = $this->option('status');
         $hours = (int) $this->option('hours');
         $limit = (int) $this->option('limit');
 
-        $query = Image::query();
-
-        // Фильтр по статусу
-        if ($status === 'all') {
-            $query->whereIn('conversion_status', ['failed', 'permanently_failed', 'skipped']);
-        } else {
-            $query->where('conversion_status', $status);
-        }
+        $query = Image::query()
+            ->where('conversion_status', 'failed');
 
         // Фильтр по времени
         if ($hours > 0) {
             $cutoffTime = Carbon::now()->subHours($hours);
-
-            if ($status === 'failed' || $status === 'all') {
-                $query->where(function ($q) use ($cutoffTime) {
-                    $q->where('conversion_failed_at', '>=', $cutoffTime)
-                        ->orWhere('conversion_skipped_at', '>=', $cutoffTime);
-                });
-            } elseif ($status === 'permanently_failed') {
-                $query->where('conversion_permanently_failed_at', '>=', $cutoffTime);
-            } elseif ($status === 'skipped') {
-                $query->where('conversion_skipped_at', '>=', $cutoffTime);
-            }
+            $query->where('conversion_failed_at', '>=', $cutoffTime);
         }
 
         // Проверка количества попыток (если не force)
         if (!$this->option('force')) {
-            $query->where('conversion_attempts', '<', 3); // Макс попыток из джобы
+            $query->where('conversion_attempts', '<', 3);
         }
 
         // Сортировка и лимит
@@ -133,13 +115,12 @@ class RetryFailedWebpConversions extends Command
 
         foreach ($images as $image) {
             try {
-                // Обновляем статус перед повторной попыткой
+                // Сбрасываем статус перед повторной попыткой
                 $image->update([
                     'conversion_status' => 'pending',
-                    'conversion_attempts' => 0,
+                    'conversion_attempts' => $image->conversion_attempts + 1,
                     'conversion_error' => null,
                     'conversion_failed_at' => null,
-                    'conversion_permanently_failed_at' => null,
                 ]);
 
                 // Запускаем джобу
@@ -172,7 +153,7 @@ class RetryFailedWebpConversions extends Command
         $this->info(' Dry run results (would retry):');
         $this->newLine();
 
-        $headers = ['ID', 'User ID', 'Original Name', 'Status', 'Failed At', 'Attempts', 'Error'];
+        $headers = ['ID', 'User ID', 'Original Name', 'Failed At', 'Attempts', 'Error'];
         $rows = [];
 
         foreach ($images as $image) {
@@ -180,30 +161,15 @@ class RetryFailedWebpConversions extends Command
                 $image->id,
                 $image->user_id,
                 $image->original_name,
-                $image->conversion_status,
-                $image->conversion_failed_at?->format('Y-m-d H:i:s') ??
-                    $image->conversion_skipped_at?->format('Y-m-d H:i:s') ?? 'N/A',
+                $image->conversion_failed_at?->format('Y-m-d H:i:s') ?? 'N/A',
                 $image->conversion_attempts,
-                substr($image->conversion_error ?? 'N/A', 0, 30) . '...',
+                substr($image->conversion_error ?? 'No error', 0, 30) . '...',
             ];
         }
 
         $this->table($headers, $rows);
         $this->newLine();
         $this->info("Total: {$images->count()} image(s) would be retried.");
-    }
-
-    /**
-     * Get parameters as array for logging
-     */
-    private function getParametersArray(): array
-    {
-        return [
-            'hours' => $this->option('hours'),
-            'limit' => $this->option('limit'),
-            'status' => $this->option('status'),
-            'force' => $this->option('force'),
-        ];
     }
 
     /**
